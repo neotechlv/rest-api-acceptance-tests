@@ -1,0 +1,82 @@
+buildscript {
+    ext {
+        retrofit_version = "2.3.0"
+        okhttp3_version = "3.8.1"
+    }
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
+        classpath "com.avast.gradle:gradle-docker-compose-plugin:0.6.13"
+        classpath "de.undercouch:gradle-download-task:3.3.0"
+    }
+}
+
+    apply plugin: 'docker-compose'
+    apply plugin: "de.undercouch.download"
+
+import de.undercouch.gradle.tasks.download.Download
+
+class ServiceDescription {
+    String name
+    String swaggerImageName
+    Integer swaggerSourcePort
+    File restApiJson
+}
+
+[
+        ServiceDescription.newInstance([name: 'BookService',
+                                        swaggerImageName:'book-service',
+                                        swaggerSourcePort: 14001,
+//                                        swaggerCodeGenBasePackage: 'lv.schoollibrary.books',
+                                        restApiJson: new File("book-service-rest-client/build", "rest_api_swagger.json")
+        ]),
+        ServiceDescription.newInstance([name: 'SchoolkidService',
+                                        swaggerImageName:'schoolkid-service',
+                                        swaggerSourcePort: 14002,
+//                                        swaggerCodeGenBasePackage: 'lv.schoollibrary.schoolkids',
+                                        restApiJson: new File("schoolkid-service-rest-client/build", "rest_api_swagger.json")
+        ]),
+        ServiceDescription.newInstance([name: 'OrderService',
+                                        swaggerImageName:'order-service',
+                                        swaggerSourcePort: 14003,
+//                                        swaggerCodeGenBasePackage: 'lv.schoollibrary.orders',
+                                        restApiJson: new File("order-service-rest-client/build", "rest_api_swagger.json")
+        ])
+].each {
+    conf ->
+    task "downloadSwaggerJson${conf.name}"(type: Download) {
+        doFirst {
+            def portInfo = dockerCompose.servicesInfos[conf.swaggerImageName].firstContainer
+            src "http://localhost:${portInfo.ports[conf.swaggerSourcePort]}/v2/api-docs"
+            dest conf.restApiJson
+        }
+
+        onlyIf { !conf.restApiJson.exists() }
+        overwrite true
+    }
+
+}
+
+dockerCompose {
+    useComposeFiles = ['local-docker-compose.yml']
+    dockerComposeWorkingDirectory = "config/src/main/resources/docker"
+    captureContainersOutput = false
+    removeContainers = true
+}
+
+//composePull.onlyIf { !restApiJson.exists() }
+//composeUp.onlyIf { !restApiJson.exists() }
+//compileJava.dependsOn downloadAllSwaggerJsons
+
+task downloadAllSwaggerJsons() {
+    // Enable pull if image is kept in Docker repo, not locally
+    // dependsOn composePull
+    dependsOn composeUp
+    dependsOn downloadSwaggerJsonBookService, downloadSwaggerJsonSchoolkidService, downloadSwaggerJsonOrderService
+    finalizedBy composeDown
+}

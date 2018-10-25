@@ -1,0 +1,10 @@
+rootProject.name = 'rest-api-acceptance-tests'
+
+include 'config'
+
+include 'book-service-rest-client'
+include 'schoolkid-service-rest-client'
+include 'order-service-rest-client'
+include 'e-klase-mock'
+
+include 'testware'

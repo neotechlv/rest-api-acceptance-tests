@@ -1,0 +1,52 @@
+version: '3.1'
+services:
+  database:
+    image: mongo
+    ports:
+    - "27018"
+    command: mongod --port 27018
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+  book-service:
+    entrypoint:
+      - /opt/docker-wait-for-others.sh
+      - database:27018
+      - --
+    command: /opt/docker-app-start.sh
+    image: restapisample/book-service:latest
+    environment:
+      - SPRING_PROFILE=local
+      - spring.data.mongodb.host=database
+    ports:
+      - "14001"
+    volumes:
+      - ./docker-wait-for-it.sh:/opt/docker-wait-for-it.sh:ro
+      - ./docker-wait-for-others.sh:/opt/docker-wait-for-others.sh:ro
+    depends_on:
+      - database
+  schoolkid-service:
+    image: restapisample/schoolkid-service:latest
+    environment:
+      - SPRING_PROFILE=local
+    ports:
+      - "14002"
+  order-service:
+    entrypoint:
+      - /opt/docker-wait-for-others.sh
+      - book-service:14001
+      - schoolkid-service:14002
+      - --
+    command: /opt/docker-app-start.sh
+    image: restapisample/order-service:latest
+    environment:
+      - SPRING_PROFILE=local
+      - spring.data.mongodb.host=database
+    ports:
+      - "14003"
+    volumes:
+      - ./docker-wait-for-it.sh:/opt/docker-wait-for-it.sh:ro
+      - ./docker-wait-for-others.sh:/opt/docker-wait-for-others.sh:ro
+    depends_on:
+      - schoolkid-service
+      - book-service

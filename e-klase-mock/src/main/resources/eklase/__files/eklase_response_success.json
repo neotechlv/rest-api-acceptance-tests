@@ -1,0 +1,5 @@
+{
+  "id": "${kidId}",
+  "name": "${kidName}",
+  "surname": "${kidSurname}"
+}

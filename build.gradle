@@ -1,0 +1,145 @@
+buildscript {
+    ext {
+        retrofit_version = "2.3.0"
+        okhttp3_version = "3.8.1"
+    }
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath "io.qameta.allure:allure-gradle:2.3"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
+        classpath "gradle.plugin.org.detoeuf:swagger-codegen-plugin:1.7.4"
+        classpath "com.avast.gradle:gradle-docker-compose-plugin:0.6.13"
+        classpath "de.undercouch:gradle-download-task:3.3.0"
+    }
+}
+
+plugins {
+    id "java"
+}
+
+apply plugin: "idea"
+apply from: "$rootDir/gradle/dependencies.gradle"
+apply plugin: 'base'
+
+idea {
+    project {
+        languageLevel = "1.8"
+    }
+}
+
+allprojects {
+    apply plugin: 'io.spring.dependency-management'
+
+    repositories {
+        jcenter()
+        maven { url 'https://jitpack.io' }
+        maven { url "https://dl.bintray.com/neotechlv/releases" }
+    }
+
+    dependencyManagement {
+        dependencies {
+            dependency "com.squareup.okhttp3:okhttp:${okhttp3_version}"
+            dependency 'com.google.guava:guava:23.0'
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+}
+
+subprojects {
+    repositories {
+        jcenter()
+    }
+
+    apply plugin: "java"
+}
+
+apply from: "$rootDir/gradle/wrapper.gradle"
+apply from: "$rootDir/gradle/swagger-spec-download.gradle"
+
+defaultTasks "clean", "build"
+
+def serviceClientProjects() {
+    subprojects.findAll { it.name.endsWith('rest-client') }
+}
+
+allprojects {
+    task allDeps(type: DependencyReportTask) {}
+}
+configure(serviceClientProjects()) {
+    buildscript {
+        ext {
+            bmuschkoPluginVersion = "3.2.0"
+            undercouchVersion = "3.3.0"
+        }
+        repositories {
+            maven {
+                url "https://plugins.gradle.org/m2/"
+            }
+            jcenter()
+        }
+        dependencies {
+            classpath "gradle.plugin.org.detoeuf:swagger-codegen-plugin:1.7.4"
+        }
+    }
+
+    apply plugin: "org.detoeuf.swagger-codegen"
+
+    String restApiJsonLocation = "${projectDir}/build/rest_api_swagger.json"
+
+    swagger {
+
+        inputSpec = restApiJsonLocation
+
+        outputDir = file("${project.buildDir.path}/swagger")
+        lang = 'java'
+
+        additionalProperties = [
+                'invokerPackage': swaggerCodeGenBasePackage,
+                'modelPackage'  : "${swaggerCodeGenBasePackage}.model".toString(),
+                'apiPackage'    : "${swaggerCodeGenBasePackage}.api".toString(),
+                'dateLibrary'   : 'java8',
+                'library'       : 'retrofit2'
+        ]
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ['src/main/java', 'build/swagger/src/main/java']
+            }
+        }
+    }
+
+    compileJava.dependsOn "swagger"
+
+    ext {
+        oltu_version = "1.0.1"
+        retrofit_version = "2.3.0"
+        swagger_annotations_version = "1.5.15"
+        junit_version = "4.12"
+        okhttp3_version = "3.8.1"
+    }
+
+    dependencies {
+        compile "com.squareup.retrofit2:retrofit:$retrofit_version"
+        compile "com.squareup.retrofit2:converter-scalars:$retrofit_version"
+        compile "com.squareup.retrofit2:converter-gson:$retrofit_version"
+        compile "io.swagger:swagger-annotations:$swagger_annotations_version"
+        compile "org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:$oltu_version"
+        compile "com.squareup.okhttp3:logging-interceptor:$okhttp3_version"
+        compile libs.accTestsFramework
+        compile project(":config")
+
+        testCompile "junit:junit:$junit_version"
+    }
+
+
+}

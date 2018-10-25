@@ -1,0 +1,41 @@
+ext {
+
+    allureVersion = '2.0-BETA18'
+    restAssuredVersion = '3.0.3'
+    cucumberVersion = '1.2.5'
+    testContainersVersion = '1.8.3'
+    accTestFrameworkVersion = '1.0.0'
+
+    libs = [
+            mockito       : [
+                    "org.mockito:mockito-all:1.9.5",
+            ],
+            testContainers: [
+                    "org.testcontainers:testcontainers:${testContainersVersion}"
+            ],
+            restAssured   : [
+                    "io.rest-assured:rest-assured:${restAssuredVersion}",
+                    "io.rest-assured:json-path:${restAssuredVersion}",
+                    "io.rest-assured:json-schema-validator:${restAssuredVersion}",
+                    "org.codehaus.groovy:groovy-all:2.4.6",
+                    "io.qameta.allure:allure-rest-assured:${allureVersion}"
+            ],
+            httpClient    : [
+                    "org.apache.httpcomponents:httpclient:4.5.3",
+                    "io.qameta.allure:allure-httpclient:${allureVersion}"
+            ],
+            selenium      : [
+                    "com.codeborne:selenide:4.4.3",
+                    "org.seleniumhq.selenium:selenium-firefox-driver:3.4.0",
+                    "io.github.bonigarcia:webdrivermanager:1.4.1"
+            ],
+            accTestsFramework : [
+                    "lv.neotech.tests:test-framework-core:${accTestFrameworkVersion}",
+                    "lv.neotech.tests:wiremock-extension:${accTestFrameworkVersion}"
+            ],
+            awaitility : [
+                    "org.awaitility:awaitility:3.0.0"
+            ]
+    ]
+
+}

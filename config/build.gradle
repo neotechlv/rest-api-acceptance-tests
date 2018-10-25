@@ -1,0 +1,10 @@
+apply plugin: 'java'
+
+dependencies {
+    compile libs.accTestsFramework
+    compile("com.rabbitmq:amqp-client:5.1.2")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.8")
+    compile("org.projectlombok:lombok:1.18.2")
+
+    testCompile libs.testContainers
+}

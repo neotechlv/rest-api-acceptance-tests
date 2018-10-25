@@ -1,0 +1,42 @@
+apply plugin: 'java'
+apply plugin: 'io.qameta.allure'
+
+test {
+    testLogging.showStandardStreams = true
+}
+
+dependencies {
+    testCompile project(":config")
+    testCompile project(":book-service-rest-client")
+    testCompile project(":schoolkid-service-rest-client")
+    testCompile project(":order-service-rest-client")
+    compile project(":e-klase-mock")
+
+    compile libs.accTestsFramework
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.8")
+    compile("org.projectlombok:lombok:1.18.2")
+
+    testCompile libs.testContainers
+    testCompile("org.awaitility:awaitility:3.0.0")
+}
+
+allure {
+    version = '2.4.1'
+    autoconfigure = true
+    aspectjweaver = true
+    allureJavaVersion = '2.7.0'
+    clean = true
+    resultsDir = new File(project.getBuildDir(), "allure-results")
+}
+
+test {
+    include("**/AcceptanceLibraryServiceTest.class")
+}
+
+// Have to copy for CLI test run, since TestContainers DockerCompose doesn't tolerate input streams
+task copyDockerConfig(type: Copy) {
+    from '../config/src/main/resources/docker'
+    into 'build/resources/test/docker'
+}
+
+test.dependsOn copyDockerConfig
